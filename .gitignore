@@ -1,0 +1,20 @@
+# Gradle & Build Cache
+.gradle/
+build/
+app/build/
+.kotlin/
+
+# Android Studio & IDE
+.idea/
+*.iml
+local.properties
+.DS_Store
+
+# Test Screencaps
+*.png
+
+# Large binaries and reverse-engineering artifacts
+*.apk
+*.xapk
+*.apkm
+jadx_src/

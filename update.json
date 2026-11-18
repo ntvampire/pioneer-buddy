@@ -1,0 +1,7 @@
+{
+  "versionCode": 1,
+  "versionName": "1.0.0",
+  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.0/PioneerBuddy-v1.0.0.apk",
+  "releaseNotes": "Первый стабильный релиз Pioneer Buddy (v1.0.0):\n• Лаконичный сервисный компаньон для Pioneer SPH-10BT на каждый день.\n• Управление подсветкой кредла и кнопок (пресеты цветов + RGB 0..60).\n• Ремаппинг аппаратных кнопок NAV, MSG, TEL, MIC (короткое/длинное нажатие).\n• Плавное нарастание громкости при удержании Vol+/Vol- без сваливания в MUTE.\n• Циклическая бегущая строка названия трека на 1-строчном дисплее магнитолы.\n• Интеграция с плеерами (Яндекс Музыка, VK Музыка, VK Tracks) и кнопка Лайк.\n• Озвучка сообщений из мессенджеров (Telegram, WhatsApp, MAX, VK, SMS) через TTS.\n• Встроенная система автономных OTA-обновлений из GitHub Releases.",
+  "sha256": "820F2FE3EC577CA23ED2387F3E2FECA6C4C3647CA632F646FEC3C1F8C93F437A"
+}
