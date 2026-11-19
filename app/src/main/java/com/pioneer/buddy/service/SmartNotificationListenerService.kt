@@ -86,19 +86,23 @@ class SmartNotificationListenerService : NotificationListenerService(), TextToSp
             }
         }
 
-        // 2. Проверяем входящие сообщения из мессенджеров (MAX, Telegram, WhatsApp, SMS, VK)
-        val isMessenger = packageName.contains("telegram", ignoreCase = true) ||
-                          packageName.contains("whatsapp", ignoreCase = true) ||
-                          packageName.contains("max", ignoreCase = true) ||
-                          packageName.contains("mms", ignoreCase = true) ||
-                          packageName.contains("vkontakte", ignoreCase = true)
+        // 2. Проверяем входящие сообщения из мессенджеров с учётом настроек пользователя
+        val remapper = PioneerSettingsManager.remapperState.value
+        val isAllowed = (remapper.ttsTelegram && packageName.contains("telegram", ignoreCase = true)) ||
+                        (remapper.ttsWhatsApp && packageName.contains("whatsapp", ignoreCase = true)) ||
+                        (remapper.ttsMax && packageName.contains("max", ignoreCase = true)) ||
+                        (remapper.ttsVk && packageName.contains("vkontakte", ignoreCase = true)) ||
+                        (remapper.ttsSms && (packageName.contains("mms", ignoreCase = true) || packageName.contains("messaging", ignoreCase = true)))
 
-        if (isMessenger) {
+        if (isAllowed) {
             val sender = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: "Новое сообщение"
             val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
             if (text.isNotBlank()) {
                 lastSender = sender
                 lastMessageText = text
+                Log.i(TAG, "Входящее сообщение от $sender ($packageName). Отправляем индикацию в SPH-10BT.")
+                // Моргнуть нижней подсветкой на магнитоле
+                PioneerConnectionManager.sendRawPacket(com.pioneer.buddy.protocol.OutgoingPackets.buildNewMessageAlert())
             }
         }
     }

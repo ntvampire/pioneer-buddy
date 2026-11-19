@@ -1,7 +1,7 @@
 {
-  "versionCode": 5,
-  "versionName": "1.0.4",
-  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.4/PioneerBuddy-v1.0.4.apk",
-  "releaseNotes": "Обновление Pioneer Buddy (v1.0.4):\n• Точная аутентичная иконка лицевой панели Pioneer SPH-10BT (без несуществующих энкодеров/крутилок).\n• Верхний фиксатор кредла, дисплейный блок, клавиши прямого доступа и фирменная нижняя светодиодная полоса подсветки.",
-  "sha256": "27A6B684DB850D843C6AA8F533E235D333CD3A07E62706617EEB8FBDBFE23D2B"
+  "versionCode": 6,
+  "versionName": "1.0.5",
+  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.5/PioneerBuddy-v1.0.5.apk",
+  "releaseNotes": "Обновление Pioneer Buddy (v1.0.5):\n• Режим «Эквалайзер» для нижней подсветки (Music Sync: моргание под бит через встроенный DSP SPH-10BT).\n• Лаконичный блок «Подсветка» с пресетами оттенков.\n• Очистка экрана: скрыты лишние селекторы, плавное нарастание громкости и бесконечная бегущая строка активны по умолчанию.\n• Озвучивание входящих сообщений (TTS) по кнопке MSG со светодиодной вспышкой при получении.\n• Полностью удалены ссылки на Smart Sync.",
+  "sha256": "A8B519670F8B69A2E73B8BA4E1670B66F57EA6E6FE3DF4CD225BC32B0FCAAEE7"
 }

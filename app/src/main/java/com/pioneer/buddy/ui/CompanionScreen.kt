@@ -86,15 +86,6 @@ fun CompanionScreen() {
                         }
                     }
                 },
-                actions = {
-                    IconButton(onClick = { launchPioneerSmartSync(context) }) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Pioneer Smart Sync",
-                            tint = PioneerAmber
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
             )
         }
@@ -118,25 +109,15 @@ fun CompanionScreen() {
             // 1. Статус связи и мини-плеер
             CompanionStatusCard(dashboardState = dashboardState, context = context)
 
-            // 2. Управление подсветкой (Нижняя зона под кредлом и кнопки)
+            // 2. Управление подсветкой
             IlluminationQuickCard(
-                customRed = illuminationState.customRed,
-                customGreen = illuminationState.customGreen,
-                customBlue = illuminationState.customBlue,
                 activePreset = illuminationState.presetColor,
-                brightness = illuminationState.displayBrightness,
-                dimmerMode = illuminationState.dimmerMode,
+                isEqualizer = illuminationState.audioLevelMeter,
                 onPresetSelected = { preset ->
                     PioneerSettingsManager.setAllIlluminationPreset(preset)
                 },
-                onRgbChanged = { r, g, b ->
-                    PioneerSettingsManager.setAllIlluminationRgb(r, g, b)
-                },
-                onBrightnessChanged = { level ->
-                    PioneerSettingsManager.setAllBrightness(level)
-                },
-                onDimmerChanged = { mode ->
-                    PioneerSettingsManager.setDimmerMode(mode)
+                onEqualizerModeChanged = { enabled ->
+                    PioneerSettingsManager.setAudioLevelMeter(enabled)
                 }
             )
 
@@ -155,21 +136,13 @@ fun CompanionScreen() {
                 }
             )
 
-            // 4. Умные твики SPH-10BT (Громкость, бегущая строка, TTS)
-            SmartTweaksCard(
-                volumeRamping = remapperState.continuousVolumeRamping,
-                infiniteMarquee = remapperState.infiniteMarqueeScroll,
+            // 4. Озвучивание сообщений (TTS)
+            MessageTtsCard(
                 ttsTelegram = remapperState.ttsTelegram,
                 ttsWhatsApp = remapperState.ttsWhatsApp,
                 ttsVk = remapperState.ttsVk,
                 ttsMax = remapperState.ttsMax,
                 ttsSms = remapperState.ttsSms,
-                onVolumeRampingChanged = { enabled ->
-                    PioneerSettingsManager.updateRemapper { it.copy(continuousVolumeRamping = enabled) }
-                },
-                onInfiniteMarqueeChanged = { enabled ->
-                    PioneerSettingsManager.updateRemapper { it.copy(infiniteMarqueeScroll = enabled) }
-                },
                 onTtsToggle = { type, enabled ->
                     PioneerSettingsManager.updateRemapper {
                         when (type) {
@@ -183,9 +156,6 @@ fun CompanionScreen() {
                     }
                 }
             )
-
-            // 5. Сервисная плашка: Smart Sync для редкой настройки акустики
-            SmartSyncInfoCard(onOpen = { launchPioneerSmartSync(context) })
 
             // 6. Подвал: Версия и проверка обновлений
             AppVersionFooter(
@@ -325,20 +295,14 @@ private fun CompanionStatusCard(dashboardState: DashboardState, context: Context
 }
 
 // -----------------------------------------------------------------------------
-// 2. Управление подсветкой (Bottom Illumination & Keys)
+// 2. Управление подсветкой
 // -----------------------------------------------------------------------------
 @Composable
 private fun IlluminationQuickCard(
-    customRed: Int,
-    customGreen: Int,
-    customBlue: Int,
     activePreset: PioneerPresetColor,
-    brightness: Int,
-    dimmerMode: DimmerMode,
+    isEqualizer: Boolean,
     onPresetSelected: (PioneerPresetColor) -> Unit,
-    onRgbChanged: (Int, Int, Int) -> Unit,
-    onBrightnessChanged: (Int) -> Unit,
-    onDimmerChanged: (DimmerMode) -> Unit
+    onEqualizerModeChanged: (Boolean) -> Unit
 ) {
     val presetList = listOf(
         PioneerPresetColor.TURQUOISE to Color(0xFF00E5FF),
@@ -355,13 +319,6 @@ private fun IlluminationQuickCard(
         PioneerPresetColor.WHITE to Color(0xFFFFFFFF)
     )
 
-    // Преобразуем шкалу Pioneer (0..60) в экранный цвет (0..255)
-    val currentColor = Color(
-        red = (customRed * 255 / 60).coerceIn(0, 255),
-        green = (customGreen * 255 / 60).coerceIn(0, 255),
-        blue = (customBlue * 255 / 60).coerceIn(0, 255)
-    )
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -369,31 +326,75 @@ private fun IlluminationQuickCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "ПОДСВЕТКА КРЕДЛА И КНОПОК",
-                    color = PioneerCyan,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
+            Text(
+                text = "ПОДСВЕТКА",
+                color = PioneerCyan,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
+            )
 
-                // Плашка предпросмотра цвета
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Селектор режима: Статическая / Эквалайзер (Music Sync)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(DarkBackground)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp, 20.dp)
+                        .weight(1f)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(currentColor)
-                        .border(1.dp, CardBorder, RoundedCornerShape(6.dp))
-                )
+                        .background(if (!isEqualizer) PioneerCyan.copy(alpha = 0.2f) else Color.Transparent)
+                        .clickable { onEqualizerModeChanged(false) }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Статическая",
+                        color = if (!isEqualizer) PioneerCyan else TextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = if (!isEqualizer) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isEqualizer) PioneerCyan.copy(alpha = 0.2f) else Color.Transparent)
+                        .clickable { onEqualizerModeChanged(true) }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Equalizer,
+                            contentDescription = null,
+                            tint = if (isEqualizer) PioneerCyan else TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Эквалайзер",
+                            color = if (isEqualizer) PioneerCyan else TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = if (isEqualizer) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
-            Text(text = "Готовые оттенки", color = TextSecondary, fontSize = 12.sp)
+            Text(
+                text = if (isEqualizer) "Цвет вспышек эквалайзера:" else "Цвет подсветки:",
+                color = TextSecondary,
+                fontSize = 12.sp
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             // Пресеты в горизонтальной строке
@@ -419,84 +420,7 @@ private fun IlluminationQuickCard(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Точная RGB настройка (Pioneer 0..60): R=$customRed, G=$customGreen, B=$customBlue",
-                color = TextSecondary,
-                fontSize = 12.sp
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // R Slider
-            RgbSliderRow(label = "R", value = customRed, color = PioneerRed) { r ->
-                onRgbChanged(r, customGreen, customBlue)
-            }
-            // G Slider
-            RgbSliderRow(label = "G", value = customGreen, color = Color(0xFF00E676)) { g ->
-                onRgbChanged(customRed, g, customBlue)
-            }
-            // B Slider
-            RgbSliderRow(label = "B", value = customBlue, color = PioneerCyan) { b ->
-                onRgbChanged(customRed, customGreen, b)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = CardBorder, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Яркость подсветки
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = "Яркость: $brightness / 10", color = TextPrimary, fontSize = 13.sp)
-                Slider(
-                    value = brightness.toFloat(),
-                    onValueChange = { onBrightnessChanged(it.toInt().coerceIn(1, 10)) },
-                    valueRange = 1f..10f,
-                    steps = 8,
-                    modifier = Modifier.width(180.dp),
-                    colors = SliderDefaults.colors(
-                        thumbColor = PioneerCyan,
-                        activeTrackColor = PioneerCyan
-                    )
-                )
-            }
         }
-    }
-}
-
-@Composable
-private fun RgbSliderRow(label: String, value: Int, color: Color, onChange: (Int) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            color = color,
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            modifier = Modifier.width(20.dp)
-        )
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { onChange(it.toInt().coerceIn(0, 60)) },
-            valueRange = 0f..60f,
-            modifier = Modifier.weight(1f),
-            colors = SliderDefaults.colors(
-                thumbColor = color,
-                activeTrackColor = color
-            )
-        )
-        Text(
-            text = "$value",
-            color = TextSecondary,
-            fontSize = 12.sp,
-            modifier = Modifier.width(28.dp)
-        )
     }
 }
 
@@ -672,19 +596,15 @@ private fun DropdownActionSelector(
 }
 
 // -----------------------------------------------------------------------------
-// 4. Умные твики SPH-10BT (Громкость, бегущая строка, TTS)
+// 4. Озвучивание сообщений (TTS)
 // -----------------------------------------------------------------------------
 @Composable
-private fun SmartTweaksCard(
-    volumeRamping: Boolean,
-    infiniteMarquee: Boolean,
+private fun MessageTtsCard(
     ttsTelegram: Boolean,
     ttsWhatsApp: Boolean,
     ttsVk: Boolean,
     ttsMax: Boolean,
     ttsSms: Boolean,
-    onVolumeRampingChanged: (Boolean) -> Unit,
-    onInfiniteMarqueeChanged: (Boolean) -> Unit,
     onTtsToggle: (String, Boolean) -> Unit
 ) {
     Card(
@@ -695,87 +615,19 @@ private fun SmartTweaksCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "ФИРМЕННЫЕ АЛГОРИТМЫ PIONEER BUDDY",
+                text = "ОЗВУЧИВАНИЕ СООБЩЕНИЙ (TTS)",
                 color = PioneerCyan,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp
             )
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Volume Ramping Switch
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text(
-                        text = "Плавное нарастание громкости",
-                        color = TextPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "При удержании кнопок ^ / v непрерывно регулирует громкость вместо случайного MUTE",
-                        color = TextSecondary,
-                        fontSize = 11.sp
-                    )
-                }
-                Switch(
-                    checked = volumeRamping,
-                    onCheckedChange = onVolumeRampingChanged,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = PioneerCyan,
-                        checkedTrackColor = PioneerCyan.copy(alpha = 0.3f)
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = CardBorder, thickness = 0.5.dp)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Infinite Marquee Switch
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text(
-                        text = "Бесконечная бегущая строка",
-                        color = TextPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "Название трека на 1-строчном экране магнитолы крутится циклически и не замирает",
-                        color = TextSecondary,
-                        fontSize = 11.sp
-                    )
-                }
-                Switch(
-                    checked = infiniteMarquee,
-                    onCheckedChange = onInfiniteMarqueeChanged,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = PioneerCyan,
-                        checkedTrackColor = PioneerCyan.copy(alpha = 0.3f)
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = CardBorder, thickness = 0.5.dp)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Мессенджеры для озвучки (TTS)
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Озвучивать входящие сообщения (TTS):",
+                text = "При нажатии клавиши MSG на магнитоле. Новые входящие подсвечиваются полосой магнитолы.",
                 color = TextSecondary,
-                fontSize = 12.sp
+                fontSize = 11.sp
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier
@@ -815,59 +667,7 @@ private fun FilterChipItem(label: String, checked: Boolean, onCheckedChange: (Bo
     )
 }
 
-// -----------------------------------------------------------------------------
-// 5. Сервисная плашка: Smart Sync
-// -----------------------------------------------------------------------------
-@Composable
-private fun SmartSyncInfoCard(onOpen: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                Text(
-                    text = "Тонкая настройка звука (DSP)",
-                    color = TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "Для разовой калибровки эквалайзера и кроссовера используйте Pioneer Smart Sync",
-                    color = TextSecondary,
-                    fontSize = 11.sp
-                )
-            }
 
-            OutlinedButton(
-                onClick = onOpen,
-                border = androidx.compose.foundation.BorderStroke(1.dp, PioneerAmber),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PioneerAmber),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Smart Sync", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-private fun launchPioneerSmartSync(context: Context) {
-    val intent = context.packageManager.getLaunchIntentForPackage("jp.pioneer.carsync")
-    if (intent != null) {
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-    } else {
-        Toast.makeText(context, "Pioneer Smart Sync не установлен на телефоне", Toast.LENGTH_LONG).show()
-    }
-}
 
 // -----------------------------------------------------------------------------
 // 6. Баннер OTA обновлений и подвал версии

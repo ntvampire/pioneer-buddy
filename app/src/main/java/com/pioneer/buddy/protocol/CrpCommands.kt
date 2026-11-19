@@ -204,7 +204,11 @@ object OutgoingPackets {
         PacketUtil.buildFrame(0x22, 2, byteArrayOf(3, zone.toByte(), level.coerceIn(1, 10).toByte()))
 
     fun buildAudioLevelMeter(enabled: Boolean): ByteArray =
-        PacketUtil.buildFrame(0x22, 2, byteArrayOf(8, if (enabled) 1 else 0))
+        PacketUtil.buildFrame(0x22, 2, byteArrayOf(9, if (enabled) 1 else 0))
+
+    // Вспышка нижней подсветки при новом входящем сообщении
+    fun buildNewMessageAlert(): ByteArray =
+        PacketUtil.buildFrame(0x20, 0, byteArrayOf(4))
 
     // =========================================================================
     // 4. ИНИЦИАЛИЗАЦИЯ И ШАГ ТЮНЕРА (PACKET ID = 0x22, TYPE = 3)
