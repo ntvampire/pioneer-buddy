@@ -1,7 +1,7 @@
 {
-  "versionCode": 3,
-  "versionName": "1.0.2",
-  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.2/PioneerBuddy-v1.0.2.apk",
-  "releaseNotes": "Обновление Pioneer Buddy (v1.0.2):\n• Исправлена иконка приложения: удалена выступающая нижняя полоса, блок кнопок центрирован по круглой маске лаунчера.\n• Обновлены растровые ресурсы и адаптивные слои для всех плотностей экранов.",
-  "sha256": "83F29CAEE012D417D89D07F76118774528788E073FDDB47129A7A24634FE653D"
+  "versionCode": 4,
+  "versionName": "1.0.3",
+  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.3/PioneerBuddy-v1.0.3.apk",
+  "releaseNotes": "Обновление Pioneer Buddy (v1.0.3):\n• Новая строгая векторная монолайн-иконка магнитолы Pioneer SPH-10BT и смартфона.\n• Полностью исключены мелкие пиктограммы и артефакты, идеальная посадка в круглые и адаптивные маски лаунчеров Android.",
+  "sha256": "A10316C4DB4236ADEFFCFE230AF9AF141E43AA5D859E0C0443FD88B3AA56B0FC"
 }
