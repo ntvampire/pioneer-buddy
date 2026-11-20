@@ -115,12 +115,8 @@ fun CompanionScreen() {
             // 2. Управление подсветкой
             IlluminationQuickCard(
                 activePreset = illuminationState.presetColor,
-                isEqualizer = illuminationState.audioLevelMeter,
                 onPresetSelected = { preset ->
                     PioneerSettingsManager.setAllIlluminationPreset(preset)
-                },
-                onEqualizerModeChanged = { enabled ->
-                    PioneerSettingsManager.setAudioLevelMeter(enabled)
                 }
             )
 
@@ -306,9 +302,7 @@ private fun CompanionStatusCard(dashboardState: DashboardState, context: Context
 @Composable
 private fun IlluminationQuickCard(
     activePreset: PioneerPresetColor,
-    isEqualizer: Boolean,
-    onPresetSelected: (PioneerPresetColor) -> Unit,
-    onEqualizerModeChanged: (Boolean) -> Unit
+    onPresetSelected: (PioneerPresetColor) -> Unit
 ) {
     val presetList = listOf(
         PioneerPresetColor.TURQUOISE to Color(0xFF00E5FF),
@@ -332,76 +326,36 @@ private fun IlluminationQuickCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "ПОДСВЕТКА",
-                color = PioneerCyan,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Селектор режима: Статическая / Эквалайзер (Music Sync)
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(DarkBackground)
-                    .padding(3.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (!isEqualizer) PioneerCyan.copy(alpha = 0.2f) else Color.Transparent)
-                        .clickable { onEqualizerModeChanged(false) }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Статическая",
-                        color = if (!isEqualizer) PioneerCyan else TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = if (!isEqualizer) FontWeight.Bold else FontWeight.Medium
+                Text(
+                    text = "ПОДСВЕТКА",
+                    color = PioneerCyan,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Equalizer,
+                        contentDescription = null,
+                        tint = PioneerCyan,
+                        modifier = Modifier.size(15.dp)
                     )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (isEqualizer) PioneerCyan.copy(alpha = 0.2f) else Color.Transparent)
-                        .clickable { onEqualizerModeChanged(true) }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Equalizer,
-                            contentDescription = null,
-                            tint = if (isEqualizer) PioneerCyan else TextSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Эквалайзер",
-                            color = if (isEqualizer) PioneerCyan else TextSecondary,
-                            fontSize = 12.sp,
-                            fontWeight = if (isEqualizer) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Эквалайзер",
+                        color = PioneerCyan,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = if (isEqualizer) "Цвет вспышек эквалайзера:" else "Цвет подсветки:",
-                color = TextSecondary,
-                fontSize = 12.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Пресеты в горизонтальной строке
             Row(

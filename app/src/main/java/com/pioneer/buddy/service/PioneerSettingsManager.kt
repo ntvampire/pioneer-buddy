@@ -62,7 +62,7 @@ data class IlluminationSettingsState(
     val customRed: Int = 0,            // 0 .. 60
     val customGreen: Int = 60,
     val customBlue: Int = 60,
-    val audioLevelMeter: Boolean = false
+    val audioLevelMeter: Boolean = true
 )
 
 data class ParkingSensorSettingsState(
@@ -143,7 +143,7 @@ object PioneerSettingsManager {
         } catch (e: Exception) {
             PioneerPresetColor.TURQUOISE
         }
-        val savedEq = sp.getBoolean("illumination_equalizer", false)
+        val savedEq = sp.getBoolean("illumination_equalizer", true)
         _illuminationState.update {
             it.copy(presetColor = savedColor, audioLevelMeter = savedEq)
         }
@@ -390,10 +390,11 @@ object PioneerSettingsManager {
     }
 
     fun setAllIlluminationPreset(color: PioneerPresetColor) {
-        _illuminationState.update { it.copy(presetColor = color) }
-        getPrefs()?.edit()?.putString("illumination_preset", color.name)?.commit()
+        _illuminationState.update { it.copy(presetColor = color, audioLevelMeter = true) }
+        getPrefs()?.edit()?.putString("illumination_preset", color.name)?.putBoolean("illumination_equalizer", true)?.commit()
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(0, color))
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(1, color))
+        PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildAudioLevelMeter(true))
     }
 
     fun setCustomRgb(zone: Int, r: Int, g: Int, b: Int) {
@@ -425,8 +426,9 @@ object PioneerSettingsManager {
         // 1. Установка цвета (Zone 0 = экран, Zone 1 = клавиши и нижняя полоса)
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(0, illumi.presetColor))
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(1, illumi.presetColor))
-        // 2. Установка режима (Статическая / Эквалайзер)
-        PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildAudioLevelMeter(illumi.audioLevelMeter))
+        // 2. Всегда активируем режим нижней подсветки «Эквалайзер» (пульсация под бит музыки)
+        PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildAudioLevelMeter(true))
+        android.util.Log.i(TAG, "Применена подсветка магнитолы: цвет=${illumi.presetColor}, режим=Эквалайзер")
     }
 
     // --- Parking Sensor Setters ---

@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.0.7",
-  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.7/PioneerBuddy-v1.0.7.apk",
-  "releaseNotes": "Обновление Pioneer Buddy (v1.0.7):\n• Гарантированное сохранение маппинга кнопок и настроек TTS на диск (commit) без сброса при обновлениях.\n• Перевод проверки обновлений на CDN GitHub Pages (github.io).\n• Контроль энергосбережения: фоновый WakeLock во время поездки и быстрое снятие ограничений батареи Android.",
-  "sha256": "84FA4E6769A32AD85CC68C069E99F398DAB8D6F67CF14D9456E41A9B00CDA455"
+  "versionCode": 9,
+  "versionName": "1.0.8",
+  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.8/PioneerBuddy-v1.0.8.apk",
+  "releaseNotes": "Обновление Pioneer Buddy (v1.0.8):\n• Автоматическое включение режима «Эквалайзер» (пульсация нижней полосы под бит музыки) при подключении к магнитоле с выбранным цветом.\n• Убран лишний переключатель режимов из блока «Подсветка», оставлен компактный выбор цветовых пресетов.",
+  "sha256": "8529CBD29FAB259420BC19D306BEE152058001A576AE99B6874FAA0615C45200"
 }
