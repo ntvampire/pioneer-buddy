@@ -100,6 +100,8 @@ data class RemapperSettingsState(
 
 object PioneerSettingsManager {
 
+    private var prefs: android.content.SharedPreferences? = null
+
     private val _audioState = MutableStateFlow(AudioSettingsState())
     val audioState: StateFlow<AudioSettingsState> = _audioState.asStateFlow()
 
@@ -117,6 +119,56 @@ object PioneerSettingsManager {
 
     private val _remapperState = MutableStateFlow(RemapperSettingsState())
     val remapperState: StateFlow<RemapperSettingsState> = _remapperState.asStateFlow()
+
+    fun init(context: android.content.Context) {
+        val sp = context.getSharedPreferences("pioneer_buddy_settings", android.content.Context.MODE_PRIVATE)
+        prefs = sp
+
+        // Загрузка сохранённой подсветки
+        val colorName = sp.getString("illumination_preset", PioneerPresetColor.TURQUOISE.name)
+        val savedColor = try {
+            PioneerPresetColor.valueOf(colorName ?: PioneerPresetColor.TURQUOISE.name)
+        } catch (e: Exception) {
+            PioneerPresetColor.TURQUOISE
+        }
+        val savedEq = sp.getBoolean("illumination_equalizer", false)
+        _illuminationState.update {
+            it.copy(presetColor = savedColor, audioLevelMeter = savedEq)
+        }
+
+        // Загрузка сохранённого ремаппинга и TTS
+        val navShort = sp.getString("nav_short", "Яндекс Навигатор") ?: "Яндекс Навигатор"
+        val navLong = sp.getString("nav_long", "2ГИС") ?: "2ГИС"
+        val msgShort = sp.getString("msg_short", "Озвучить сообщения (TTS)") ?: "Озвучить сообщения (TTS)"
+        val msgLong = sp.getString("msg_long", "Открыть Telegram") ?: "Открыть Telegram"
+        val telShort = sp.getString("tel_short", "Контакты / Вызовы") ?: "Контакты / Вызовы"
+        val telLong = sp.getString("tel_long", "Быстрый вызов (Избранное)") ?: "Быстрый вызов (Избранное)"
+        val micShort = sp.getString("mic_short", "Голосовой ассистент") ?: "Голосовой ассистент"
+        val micLong = sp.getString("mic_long", "MUTE / ATT") ?: "MUTE / ATT"
+        val ttsTg = sp.getBoolean("tts_tg", true)
+        val ttsWa = sp.getBoolean("tts_wa", true)
+        val ttsVk = sp.getBoolean("tts_vk", true)
+        val ttsMax = sp.getBoolean("tts_max", true)
+        val ttsSms = sp.getBoolean("tts_sms", true)
+
+        _remapperState.update {
+            it.copy(
+                navShortAction = navShort,
+                navLongAction = navLong,
+                msgShortAction = msgShort,
+                msgLongAction = msgLong,
+                telShortAction = telShort,
+                telLongAction = telLong,
+                micShortAction = micShort,
+                micLongAction = micLong,
+                ttsTelegram = ttsTg,
+                ttsWhatsApp = ttsWa,
+                ttsVk = ttsVk,
+                ttsMax = ttsMax,
+                ttsSms = ttsSms
+            )
+        }
+    }
 
     // --- Audio Setters ---
 
@@ -322,6 +374,7 @@ object PioneerSettingsManager {
 
     fun setAllIlluminationPreset(color: PioneerPresetColor) {
         _illuminationState.update { it.copy(presetColor = color) }
+        prefs?.edit()?.putString("illumination_preset", color.name)?.apply()
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(0, color))
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(1, color))
     }
@@ -345,7 +398,18 @@ object PioneerSettingsManager {
 
     fun setAudioLevelMeter(enabled: Boolean) {
         _illuminationState.update { it.copy(audioLevelMeter = enabled) }
+        prefs?.edit()?.putBoolean("illumination_equalizer", enabled)?.apply()
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildAudioLevelMeter(enabled))
+    }
+
+    // Автоматическая отправка сохранённых настроек подсветки при подключении SPH-10BT
+    fun applyCurrentIllumination() {
+        val illumi = _illuminationState.value
+        // 1. Установка цвета (Zone 0 = экран, Zone 1 = клавиши и нижняя полоса)
+        PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(0, illumi.presetColor))
+        PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(1, illumi.presetColor))
+        // 2. Установка режима (Статическая / Эквалайзер)
+        PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildAudioLevelMeter(illumi.audioLevelMeter))
     }
 
     // --- Parking Sensor Setters ---
@@ -392,6 +456,23 @@ object PioneerSettingsManager {
     // --- Pioneer Buddy Remapper Setters ---
 
     fun updateRemapper(updater: (RemapperSettingsState) -> RemapperSettingsState) {
-        _remapperState.update(updater)
+        val newState = updater(_remapperState.value)
+        _remapperState.value = newState
+        prefs?.edit()?.apply {
+            putString("nav_short", newState.navShortAction)
+            putString("nav_long", newState.navLongAction)
+            putString("msg_short", newState.msgShortAction)
+            putString("msg_long", newState.msgLongAction)
+            putString("tel_short", newState.telShortAction)
+            putString("tel_long", newState.telLongAction)
+            putString("mic_short", newState.micShortAction)
+            putString("mic_long", newState.micLongAction)
+            putBoolean("tts_tg", newState.ttsTelegram)
+            putBoolean("tts_wa", newState.ttsWhatsApp)
+            putBoolean("tts_vk", newState.ttsVk)
+            putBoolean("tts_max", newState.ttsMax)
+            putBoolean("tts_sms", newState.ttsSms)
+            apply()
+        }
     }
 }

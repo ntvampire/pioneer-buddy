@@ -141,8 +141,13 @@ class PioneerBluetoothService : Service() {
                 write(OutgoingPackets.protocolVersionNotification(4, 8))
                 write(OutgoingPackets.endInitialAuth())
                 Log.i(TAG, "Handshake с SPH-10BT успешно отправлен")
+
+                // Автоматическая активация сохранённой подсветки SPH-10BT (зажигаем нижнюю полосу и клавиши)
+                sleep(300)
+                PioneerSettingsManager.applyCurrentIllumination()
+                Log.i(TAG, "Автоматическое применение подсветки SPH-10BT выполнено")
             } catch (e: Exception) {
-                Log.e(TAG, "Ошибка рукопожатия", e)
+                Log.e(TAG, "Ошибка рукопожатия / активации подсветки", e)
             }
 
             val buffer = ByteArray(1024)
