@@ -100,7 +100,19 @@ data class RemapperSettingsState(
 
 object PioneerSettingsManager {
 
+    private const val TAG = "PioneerSettings"
     private var prefs: android.content.SharedPreferences? = null
+
+    private fun getPrefs(): android.content.SharedPreferences? {
+        if (prefs == null) {
+            try {
+                prefs = com.pioneer.buddy.PioneerBuddyApp.instance.getSharedPreferences("pioneer_buddy_settings", android.content.Context.MODE_PRIVATE)
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "SharedPreferences ещё не инициализированы", e)
+            }
+        }
+        return prefs
+    }
 
     private val _audioState = MutableStateFlow(AudioSettingsState())
     val audioState: StateFlow<AudioSettingsState> = _audioState.asStateFlow()
@@ -150,6 +162,8 @@ object PioneerSettingsManager {
         val ttsVk = sp.getBoolean("tts_vk", true)
         val ttsMax = sp.getBoolean("tts_max", true)
         val ttsSms = sp.getBoolean("tts_sms", true)
+        val contVol = sp.getBoolean("continuous_vol", true)
+        val infMarquee = sp.getBoolean("infinite_marquee", true)
 
         _remapperState.update {
             it.copy(
@@ -165,9 +179,12 @@ object PioneerSettingsManager {
                 ttsWhatsApp = ttsWa,
                 ttsVk = ttsVk,
                 ttsMax = ttsMax,
-                ttsSms = ttsSms
+                ttsSms = ttsSms,
+                continuousVolumeRamping = contVol,
+                infiniteMarqueeScroll = infMarquee
             )
         }
+        android.util.Log.i(TAG, "Настройки загружены: NAV=[$navShort / $navLong], MSG=[$msgShort / $msgLong], TEL=[$telShort / $telLong], MIC=[$micShort / $micLong], TTS=[TG:$ttsTg, WA:$ttsWa, VK:$ttsVk, MAX:$ttsMax, SMS:$ttsSms], Illumi=[$savedColor, EQ:$savedEq]")
     }
 
     // --- Audio Setters ---
@@ -374,7 +391,7 @@ object PioneerSettingsManager {
 
     fun setAllIlluminationPreset(color: PioneerPresetColor) {
         _illuminationState.update { it.copy(presetColor = color) }
-        prefs?.edit()?.putString("illumination_preset", color.name)?.apply()
+        getPrefs()?.edit()?.putString("illumination_preset", color.name)?.commit()
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(0, color))
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildPresetColor(1, color))
     }
@@ -398,7 +415,7 @@ object PioneerSettingsManager {
 
     fun setAudioLevelMeter(enabled: Boolean) {
         _illuminationState.update { it.copy(audioLevelMeter = enabled) }
-        prefs?.edit()?.putBoolean("illumination_equalizer", enabled)?.apply()
+        getPrefs()?.edit()?.putBoolean("illumination_equalizer", enabled)?.commit()
         PioneerConnectionManager.sendRawPacket(OutgoingPackets.buildAudioLevelMeter(enabled))
     }
 
@@ -458,7 +475,7 @@ object PioneerSettingsManager {
     fun updateRemapper(updater: (RemapperSettingsState) -> RemapperSettingsState) {
         val newState = updater(_remapperState.value)
         _remapperState.value = newState
-        prefs?.edit()?.apply {
+        val saved = getPrefs()?.edit()?.apply {
             putString("nav_short", newState.navShortAction)
             putString("nav_long", newState.navLongAction)
             putString("msg_short", newState.msgShortAction)
@@ -472,7 +489,9 @@ object PioneerSettingsManager {
             putBoolean("tts_vk", newState.ttsVk)
             putBoolean("tts_max", newState.ttsMax)
             putBoolean("tts_sms", newState.ttsSms)
-            apply()
-        }
+            putBoolean("continuous_vol", newState.continuousVolumeRamping)
+            putBoolean("infinite_marquee", newState.infiniteMarqueeScroll)
+        }?.commit() ?: false
+        android.util.Log.i(TAG, "Сохранены настройки ремаппера (success=$saved): NAV=[${newState.navShortAction} / ${newState.navLongAction}], MSG=[${newState.msgShortAction} / ${newState.msgLongAction}], TTS=[TG:${newState.ttsTelegram}, WA:${newState.ttsWhatsApp}, VK:${newState.ttsVk}, MAX:${newState.ttsMax}, SMS:${newState.ttsSms}]")
     }
 }

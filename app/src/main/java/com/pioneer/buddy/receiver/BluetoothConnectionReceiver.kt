@@ -31,8 +31,10 @@ class BluetoothConnectionReceiver : BroadcastReceiver() {
                 val deviceName = device?.name ?: ""
                 Log.i(TAG, "Bluetooth подключение к устройству: $deviceName (${device?.address})")
 
-                if (deviceName.contains("SPH-10BT", ignoreCase = true) || deviceName.contains("Pioneer", ignoreCase = true)) {
-                    Log.i(TAG, "Обнаружена магнитола Pioneer SPH-10BT. Активация PioneerBluetoothService...")
+                if (deviceName.contains("SPH-10BT", ignoreCase = true) ||
+                    deviceName.contains("Pioneer", ignoreCase = true) ||
+                    deviceName.isBlank()) {
+                    Log.i(TAG, "Обнаружено BT-событие магнитолы. Активация PioneerBluetoothService...")
                     startPioneerService(context)
                 }
             }

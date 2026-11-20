@@ -26,7 +26,7 @@ import java.net.URL
 object UpdateManager {
 
     private const val TAG = "UpdateManager"
-    const val MANIFEST_URL = "https://raw.githubusercontent.com/ntvampire/pioneer-buddy/main/update.json"
+    const val MANIFEST_URL = "https://ntvampire.github.io/pioneer-buddy/update.json"
     const val RELEASES_PAGE_URL = "https://github.com/ntvampire/pioneer-buddy/releases"
 
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)

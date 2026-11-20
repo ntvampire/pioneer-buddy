@@ -1,0 +1,7 @@
+{
+  "versionCode": 8,
+  "versionName": "1.0.7",
+  "apkUrl": "https://github.com/ntvampire/pioneer-buddy/releases/download/v1.0.7/PioneerBuddy-v1.0.7.apk",
+  "releaseNotes": "Обновление Pioneer Buddy (v1.0.7):\n• Гарантированное сохранение маппинга кнопок и настроек TTS на диск (commit) без сброса при обновлениях.\n• Перевод проверки обновлений на CDN GitHub Pages (github.io).\n• Контроль энергосбережения: фоновый WakeLock во время поездки и быстрое снятие ограничений батареи Android.",
+  "sha256": "84FA4E6769A32AD85CC68C069E99F398DAB8D6F67CF14D9456E41A9B00CDA455"
+}

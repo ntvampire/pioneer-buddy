@@ -2,6 +2,9 @@ package com.pioneer.buddy.ui
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -156,6 +159,9 @@ fun CompanionScreen() {
                     }
                 }
             )
+
+            // 5. Контроль фоновой работы и батареи
+            BatteryOptimizationCard(context = context)
 
             // 6. Подвал: Версия и проверка обновлений
             AppVersionFooter(
@@ -888,6 +894,90 @@ private fun AppVersionFooter(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
+        }
+    }
+}
+
+@Composable
+private fun BatteryOptimizationCard(context: Context) {
+    val powerManager = remember { context.getSystemService(Context.POWER_SERVICE) as? PowerManager }
+    var isIgnoring by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+            } else {
+                true
+            }
+        )
+    }
+
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    isIgnoring = powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    if (!isIgnoring) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = PioneerAmber.copy(alpha = 0.1f)),
+            border = androidx.compose.foundation.BorderStroke(1.dp, PioneerAmber.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "⚡ РАБОТА В ФОНЕ И ЭНЕРГОСБЕРЕЖЕНИЕ",
+                    color = PioneerAmber,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Android может усыплять сервис при выключенном экране. Чтобы Pioneer Buddy всегда мгновенно подключался к магнитоле при посадке в авто, отключите оптимизацию батареи.",
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            try {
+                                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(fallback)
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PioneerAmber.copy(alpha = 0.25f)),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PioneerAmber)
+                ) {
+                    Text(
+                        text = "Снять ограничения батареи",
+                        color = PioneerAmber,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
         }
     }
 }

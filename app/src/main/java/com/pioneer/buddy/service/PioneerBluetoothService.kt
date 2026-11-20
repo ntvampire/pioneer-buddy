@@ -14,6 +14,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pioneer.buddy.MainActivity
@@ -36,6 +37,7 @@ class PioneerBluetoothService : Service() {
     private var acceptThread: AcceptThread? = null
     private var connectedThread: ConnectedThread? = null
     private val isRunning = AtomicBoolean(false)
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -54,6 +56,39 @@ class PioneerBluetoothService : Service() {
         }
 
         startServer()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!isRunning.get()) {
+            startServer()
+        }
+        return START_STICKY
+    }
+
+    private fun acquireWakeLock() {
+        try {
+            if (wakeLock == null) {
+                val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                wakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PioneerBuddy:BtServiceLock")?.apply {
+                    setReferenceCounted(false)
+                }
+            }
+            wakeLock?.acquire(8 * 60 * 60 * 1000L) // До 8 часов непрерывной связи во время поездки
+            Log.i(TAG, "WakeLock активирован для устойчивой связи в фоне")
+        } catch (e: Exception) {
+            Log.w(TAG, "Не удалось захватить WakeLock", e)
+        }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                Log.i(TAG, "WakeLock освобождён")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Ошибка освобождения WakeLock", e)
+        }
     }
 
     private fun startServer() {
@@ -129,6 +164,7 @@ class PioneerBluetoothService : Service() {
         private val isConnected = AtomicBoolean(true)
 
         override fun run() {
+            acquireWakeLock()
             PioneerConnectionManager.setConnectionStatus(ConnectionStatus.CONNECTED, socket.remoteDevice?.name ?: "SPH-10BT")
             updateNotification("SPH-10BT подключена (${socket.remoteDevice?.name})")
 
@@ -162,6 +198,7 @@ class PioneerBluetoothService : Service() {
                 }
             }
 
+            releaseWakeLock()
             PioneerConnectionManager.setConnectionStatus(ConnectionStatus.DISCONNECTED)
             updateNotification("Магнитола отключена. Повторный запуск сервера...")
             if (isRunning.get()) {
@@ -257,6 +294,7 @@ class PioneerBluetoothService : Service() {
     override fun onDestroy() {
         isRunning.set(false)
         stopThreads()
+        releaseWakeLock()
         super.onDestroy()
     }
 
